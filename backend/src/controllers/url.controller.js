@@ -57,41 +57,74 @@ export const createShortUrl = async (req, res) => {
   }
 };
 
-
 export const getOriginalUrl = async (req, res) => {
   try {
-    const {shortCode} = req.params;
+    const { shortCode } = req.params;
 
     // find URL by shortcode
-    const url = await UrlModel.findOne({shortCode});
+    const url = await UrlModel.findOne({ shortCode });
 
-    if(!url){
+    if (!url) {
       return res.status(404).json({
-        success:false,
-        message:"URL Not Found"
+        success: false,
+        message: "URL Not Found",
       });
     }
 
     // Checking expiry
-    if(url.expiresAt && url.expiresAt < new Date()){
+    if (url.expiresAt && url.expiresAt < new Date()) {
       return res.status(410).json({
-        success:false,
-        message:"URL has expired"
+        success: false,
+        message: "URL has expired",
       });
     }
 
     // Increase click count
-    await UrlModel.updateOne(
-      {_id:url._id}, {$inc:{clicks:1}}
-    );
+    await UrlModel.updateOne({ _id: url._id }, { $inc: { clicks: 1 } });
 
     // redirect to original URL
     return res.redirect(302, url.originalUrl);
   } catch (error) {
     console.error("Redirect error : ", error);
     return res.status(500).json({
-      success:true,
-      message:"Redirect Failed"
+      success: true,
+      message: "Redirect Failed",
     });
   }
-}
+};
+
+export const getAnalytics = async (req, res) => {
+  try {
+    const { shortCode } = req.params;
+
+    const url = await UrlModel.findOne({ shortCode });
+
+    if (!url) {
+      return res.status(404).json({
+        success: false,
+        message: "URL Not Found",
+      });
+    }
+
+    const isExpired = url.expiresAt < new Date();
+
+    return res.status(200).json({
+      success: true,
+      message: "Analytics Fetched successfully",
+      data: {
+        shortCode: url.shortCode,
+        originalUrl: url.originalUrl,
+        clicks: url.clicks,
+        createdAt: url.createdAt,
+        expiresAt: url.expiresAt,
+        isExpired,
+      },
+    });
+  } catch (error) {
+    console.error("Get Analytics Error : ", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch URL Analytics",
+    });
+  }
+};
