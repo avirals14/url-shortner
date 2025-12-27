@@ -23,6 +23,7 @@ const urlSchema = new Schema(
     expiresAt: {
       type: Date,
       default: null,
+      index:{expireAfterSeconds:0}
     },
   },
   { timestamps: { createdAt: true, updatedAt: false } }

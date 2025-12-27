@@ -3,7 +3,7 @@ import { nanoid } from "nanoid";
 
 export const createShortUrl = async (req, res) => {
   try {
-    const { originalUrl } = req.body;
+    const { originalUrl, expiresIn} = req.body;
 
     if (!originalUrl) {
       return res.status(400).json({
@@ -32,10 +32,16 @@ export const createShortUrl = async (req, res) => {
       if (!existingUrl) exists = false;
     }
 
+    let expiresAt = null;
+
+    if(expiresIn){
+      expiresAt = new Date(Date.now() + expiresIn*60*1000);
+    }
+
     // Save to DB
     const url = await UrlModel.create({
       originalUrl: parsedUrl.href,
-      shortCode,
+      shortCode, expiresAt
     });
 
     // Build Short URL
