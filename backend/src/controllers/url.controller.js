@@ -27,7 +27,7 @@ export const createShortUrl = async (req, res) => {
     let exists = true;
 
     while (exists) {
-      shortCode = nanoid(6);
+      shortCode = nanoid(5);
       const existingUrl = await UrlModel.findOne({ shortCode });
       if (!existingUrl) exists = false;
     }
@@ -56,3 +56,42 @@ export const createShortUrl = async (req, res) => {
     });
   }
 };
+
+
+export const getOriginalUrl = async (req, res) => {
+  try {
+    const {shortCode} = req.params;
+
+    // find URL by shortcode
+    const url = await UrlModel.findOne({shortCode});
+
+    if(!url){
+      return res.status(404).json({
+        success:false,
+        message:"URL Not Found"
+      });
+    }
+
+    // Checking expiry
+    if(url.expiresAt && url.expiresAt < new Date()){
+      return res.status(410).json({
+        success:false,
+        message:"URL has expired"
+      });
+    }
+
+    // Increase click count
+    await UrlModel.updateOne(
+      {_id:url._id}, {$inc:{clicks:1}}
+    );
+
+    // redirect to original URL
+    return res.redirect(302, url.originalUrl);
+  } catch (error) {
+    console.error("Redirect error : ", error);
+    return res.status(500).json({
+      success:true,
+      message:"Redirect Failed"
+    });
+  }
+}

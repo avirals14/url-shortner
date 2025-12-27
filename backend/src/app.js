@@ -14,5 +14,6 @@ app.use(
 );
 
 app.use("/api", urlRoutes);
+app.use("/", urlRoutes);
 
 export default app;
